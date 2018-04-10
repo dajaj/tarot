@@ -18,18 +18,6 @@
 
         // chips
         $('.chips').chips();
-        $('.new-player-selector').chips({
-            placeholder: 'Entrer un nom',
-            secondaryPlaceholder: '+Nom',
-            onChipAdd: function(a) {
-                $('#newPlayers').val(a[0].textContent.split('close').join('|*^*|'));
-                $('#newPlayers').trigger('change');
-            },
-            onChipDelete: function(a) {
-                $('#newPlayers').val(a[0].textContent.split('close').join('|*^*|'));
-                $('#newPlayers').trigger('change');
-            }
-        });
         
         initScoreRange();
         
@@ -194,6 +182,7 @@
         let playerNumber = 0;
         let validPlayersNumber = 0;
         let block = false;
+		let chipNumber = 0;
         
         setValidPlayersNumber();
         setPlayersNumber();
@@ -203,6 +192,20 @@
         $('#new-game-form input[name="players"]').on('change', function() {
             setPlayersNumber();
         });
+        $('.new-player-selector').chips({
+            placeholder: 'Entrer un nom',
+            secondaryPlaceholder: '+Nom',
+            onChipAdd: function(a) {
+				chipNumber++;
+                $('#newPlayers').val(a[0].textContent.split('close').join('|*^*|'));
+                $('#newPlayers').trigger('change');
+            },
+            onChipDelete: function(a) {
+				chipNumber--;
+                $('#newPlayers').val(a[0].textContent.split('close').join('|*^*|'));
+                $('#newPlayers').trigger('change');
+            }
+        });
         
         function setValidPlayersNumber() {
             validPlayersNumber = $('#new-game-form input[name="playersNumber"]:checked').val();
@@ -210,7 +213,7 @@
         }
         
         function setPlayersNumber() {
-            playerNumber = $('#new-game-form input[name="players"]:checked').length;
+            playerNumber = $('#new-game-form input[name="players"]:checked').length + chipNumber;
             validatePlayersNumber();
         }
         

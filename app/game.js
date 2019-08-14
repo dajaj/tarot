@@ -24,6 +24,8 @@ const gameSchema = mongoose.Schema({
         won: Boolean,
         journal: [String],
     }],
+    disabled: Boolean,
+    wikiID: String,
 });
 const GameModel = mongoose.model('Game', gameSchema);
 
@@ -37,13 +39,16 @@ function addGame(req, callback) {
         'name',
         'playersNumber',
         'players',
-        'newPlayers'
+        'newPlayers',
+        'originalWikiName',
+        'originalWikiID',
     ]);
     let groupName = req.session.currentGroup;
     if(!groupName) return callback('Erreur non reconnue');
 
     // name
     let name = params.name || 'cool';
+    let wikiID = params.originalWikiName == params.name ? params.originalWikiID : '';
     // name = name.replace(' ','-');
     // players number
     let playersNumber = parseInt(params.playersNumber) || 5;
@@ -86,6 +91,8 @@ function addGame(req, callback) {
         playersNumber: playersNumber,
         players : players,
         date: new Date(),
+        disabled: false,
+        wikiID: wikiID,
     });
     newGame.save((err, object) => {
         if(err) {
@@ -94,6 +101,7 @@ function addGame(req, callback) {
         callback(null, object);
     });
 }
+
 
 function getGame(id, groupName, callback) {
     GameModel.findById(id, (err, game) => {
@@ -113,10 +121,34 @@ function getGame(id, groupName, callback) {
     });
 }
 
-function getGames(filter, callback) {
-    GameModel.find(filter, (err, games) => {
+/**
+transform(Boolean) : if true, convenient transformation of data happen
+    game name, type,group,playersNumber,date,_id moved in the round
+*/
+function getGames(filter, callback, transform) {
+    GameModel.find(filter, (err, _games) => {
         if(err) return console.error(err);
+        
+        if(!transform) {
+            return callback(_games);
+        }
+               
+        let games = JSON.parse(JSON.stringify(_games));
+        
+        games.forEach(game => {
+            game.rounds.forEach(round => {
+                round.name = game.name;
+                round.type = game.type;
+                round.playersNumber = game.playersNumber;
+                round.gameId = game._id;
+                round.date = {
+                    $date: game.date,
+                };
+            });
+        });
+        
         return callback(games);
+        
     }).sort('date');
 }
 
@@ -212,6 +244,41 @@ function getScoresFromRounds(players, rounds) {
     return players;
 }
 
+function deleteGame(req, callback) {
+    if(!req.body || !req.body.id) {
+        return callback('Bad parameters');
+    }
+    let id = req.body.id;
+    let groupName = req.session.currentGroup;
+    
+    getGame(id, groupName, (err, game) => {
+        if(err) return callback(err);
+        if(game.rounds && game.rounds.length > 0) {
+            return callback('Impossible de supprimer une partie ayant des rounds');
+        } else {
+            GameModel.deleteOne({_id:id}, (err, res) => {
+                if(err) return callback(err);
+                return callback();
+            });
+        }
+    });
+
+}
+
+function toggleDisabled(req, callback) {
+    let id = req.body.id;
+    let groupName = req.session.currentGroup;
+    
+    getGame(id, groupName, (err, game) => {
+        if(err) return callback(err);
+        game.disabled = !game.disabled;
+        
+        game.save((err, res) => {
+            if(err) return callback(err);
+            return callback(err, res);
+        });
+    });
+}
 
 module.exports = {
     find,
@@ -222,4 +289,6 @@ module.exports = {
     editRoundFromGame,
     getDefaultGameName,
     getScoresFromRounds,
+    deleteGame,
+    toggleDisabled,
 };

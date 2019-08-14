@@ -1,4 +1,7 @@
-<h2><a href="/"><i class="edit-btn-collapse material-icons">keyboard_arrow_left</i></a>{{game.name}}</h2>
+<h2><a href="/"><i class="edit-btn-collapse material-icons">keyboard_arrow_left</i></a>{{game.name}} {{#if game.disabled}}<i class="material-icons">block</i>{{/if}}
+{{#if game.wikiID}}<i style="font-size: 9px;color: #a8a8a8;">source: <a href="https://fr.wikipedia.org/?curid={{game.wikiID}}" target="_blank">Wikipedia</a></i>{{/if}}</h2>
+
+
 {{#if error}}
 <blockquote>
     {{error}}
@@ -23,11 +26,11 @@
     <li>
         <a href="#edit" edit-id="{{id}}" current-data="{{json params}}" class="secondary-content button-edit-game-params"><i class="edit-btn-collapse material-icons">edit</i></a>
         <div class="collapsible-header">
-            <b class="{{#if won}}bonus{{else}}malus{{/if}}">#{{@index}} </b>
+            <b class="{{#if won}}bonus{{else}}malus{{/if}}">#{{add1 @index}} </b>
             &nbsp;&nbsp;
             {{params.player}}<i class="material-icons">person</i>  
             {{#if params.called}}{{params.called}}<i class="material-icons">person_outline</i>{{/if}}
-            ({{params.contrat}})
+            ({{params.contrat}}{{#if params.regret}} avec regret{{/if}})
             
             
         </div>
@@ -55,7 +58,7 @@
     <tbody>
         {{#each game.rounds}}
         <tr>
-            <td>{{@index}}</td>
+            <td>{{add1 @index}}</td>
             {{#each playersScores}}
             <td class="{{#ifGt mod 0}}bonus{{else}}malus{{/ifGt}}">{{mod}}</td>
             {{/each}}
@@ -65,6 +68,12 @@
             <td class="total">Total</td>
             {{#each game.players}}
             <td class="total {{#ifGt score 0}}bonus{{else}}malus{{/ifGt}}">{{score}}</td>
+            {{/each}}
+        </tr>
+        <tr>
+            <th></th>
+            {{#each game.players}}
+            <th>{{name}}</th>
             {{/each}}
         </tr>
     </tbody>
@@ -80,3 +89,25 @@
             chart-options="{{json options}}" 
             width="400" height="300"></canvas>
 {{/each}}
+
+<h4>Options</h4>
+{{#ifEmpty game.rounds}}
+<button class="waves-effect waves-light right-link btn" onclick="gameManager.deleteGame('{{../game.id}}')">
+    <i class="material-icons left">delete_forever</i>
+    Supprimer la partie
+</button>
+{{/ifEmpty}}
+{{#if game.disabled}}
+<button class="waves-effect waves-light right-link btn" onclick="gameManager.toggleDisabledGame('{{game.id}}')">
+    <i class="material-icons left">block</i>
+    Réactiver la partie
+</button>
+{{else}}
+<button class="waves-effect waves-light right-link btn" onclick="gameManager.toggleDisabledGame('{{game.id}}')">
+    <i class="material-icons left">check_circle</i>
+    Désactiver la partie
+</button>
+{{/if}}
+<br><br>
+
+

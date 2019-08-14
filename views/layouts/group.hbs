@@ -17,13 +17,14 @@
 <div class="collection">
     
     {{#each games}}
-    <a class="collection-item" href="/game/{{name}}?id={{id}}">
+    <a class="collection-item" href="/game/{{id}}">
+        {{#if disabled}}<i class="material-icons left" style="font-size:22px;">block</i>{{/if}}
         {{name}}
         {{#if players}}
         {{#each players}}
             <span class="new badge hide-on-small-only player" data-badge-caption="{{name}}"></span>
         {{/each}}
-        <span class="new badge grey hide-on-med-and-up" data-badge-caption="{{#each players}}{{name}} - {{/each}}"></span>
+        <span class="new badge grey hide-on-med-and-up" data-badge-caption="{{joinName players ' - '}}"></span>
         {{/if}}
     </a>
     {{/each}}
@@ -37,14 +38,85 @@
     </form>
 </div>
 
-<h2>Joueurs</h2>
-<ul class="collapsible">
-{{#each group.players}}
-    <li>
-        <div class="collapsible-header"><i class="material-icons">timeline</i>{{name}}</div>
-        <div class="collapsible-body">
-            <span>Lorem ipsum dolor sit amet.</span>
-        </div>
-    </li>
-{{/each}}
+<h2>Statistiques</h2>
+
+<ul class="tabs">
+    <li class="tab col s3"><a href="#tarot5">Tarot à 5</a></li>
+    <li class="tab col s3"><a href="#tarot4">Tarot à 4</a></li>
 </ul>
+
+<ul id="tarot5" class="collapsible">
+    <li>
+        <div class="collapsible-header async-charts-group" chart-name="previousSeasonPointsTarot5"><i class="material-icons">star</i>Classement du mois précédent</div>
+        <div class="collapsible-body"></div>
+    </li>
+    <li>
+        <div class="collapsible-header async-charts-group" chart-name="allTimePointsTarot5"><i class="material-icons">timeline</i>Classement général</div>
+        <div class="collapsible-body"></div>
+    </li>
+    <li>
+        <div class="collapsible-header async-charts-group"  chart-name="prisesVictoire5"><i class="material-icons">timeline</i>Prises et victoires</div>
+        <div class="collapsible-body"></div>
+    </li>
+    <li>
+        <div class="collapsible-header async-charts-group" chart-name="tarotTimesCalled"><i class="material-icons">timeline</i>Classement des appellés</div>
+        <div class="collapsible-body"></div>
+    </li>
+</ul>
+<ul id="tarot4" class="collapsible">
+    <li>
+        <div class="collapsible-header async-charts-group"  chart-name="previousSeasonPointsTarot4"><i class="material-icons">star</i>Classement du mois précédent</div>
+        <div class="collapsible-body"></div>
+    </li>
+    <li>
+        <div class="collapsible-header async-charts-group"  chart-name="allTimePointsTarot4"><i class="material-icons">timeline</i>Classement général</div>
+        <div class="collapsible-body"></div>
+    </li>
+    <li>
+        <div class="collapsible-header async-charts-group"  chart-name="prisesVictoire4"><i class="material-icons">timeline</i>Prises et victoires</div>
+        <div class="collapsible-body"></div>
+    </li>
+</ul>
+
+<h2>Hall of fame</h2>
+<table class="sortable">
+    <thead>
+        <tr>
+            <th data-value-type="string" class="sorted">Joueur</th>
+            <th data-value-type="number">Badges</th>
+            <th data-value-type="number">Rounds joués</th>
+            <th data-value-type="number">Ratio de victoires</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{#each overallStats}}
+        <tr>
+            <td><a href="/player/{{playerName}}">{{playerName}}</a></td>
+            <td>{{badgesCount}}</td>
+            <td>{{roundsCount}}</td>
+            <td>{{victoryRatio}}</td>
+        </tr>
+    {{/each}}
+    </tbody>
+</table>
+
+
+
+<h2>Joueurs actifs</h2>
+<div class="group-player-selector">
+    <form method="post" action="/group/selectplayers">
+        {{#each group.players}}
+        <label>
+            <input type="checkbox" value="{{name}}" {{#if disabled}}{{else}}checked{{/if}} name="playersToInclude"/>
+            <span>{{name}}</span>
+            <a class="badge-link" href="/player/{{name}}">
+                <i class="material-icons">bar_chart</i>
+            </a>
+        </label>
+        {{/each}}
+        <br>
+        <button type="submit" class="waves-effect waves-light btn offset-s1 col">Enregistrer</button> 
+    </form>
+</div>
+
+<br>

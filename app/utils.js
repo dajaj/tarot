@@ -71,10 +71,35 @@ function getSessionKey(grp, secret) {
     return md5(secret + '-' + grp + '==');
 }
 
+function getMonday(date) {
+    date = new Date(date);
+    let day = date.getDay();
+    let diff = date.getDate() - day + (day == 0 ? -6:0); // adjust when day is sunday
+    return new Date(date.setDate(diff));
+}
+
+function getStartOfMonth(date) {
+    date = new Date(date);
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+
+function isPlayerExcluded(group, playerName) {
+    for(let player of group.players) {
+        if(player.disabled && player.name == playerName) {
+            return true;
+        }
+    }
+    return false;
+}
+
 module.exports = {
     hashPassword,
     getRequestParams,
     setConnected,
     mustBeAuthentified,
     getReadableDate,
+    getMonday,
+    getStartOfMonth,
+    isPlayerExcluded,
 }

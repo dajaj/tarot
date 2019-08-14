@@ -1,15 +1,10 @@
 let gameCharts = require('./game');
+let playerCharts = require('./player');
+let groupCharts = require('./group');
 
-const charts = {
-    game: gameCharts,
-}
-
-function getChart(subject, chart, data) {
-    if(charts[subject]) {
-        return charts[subject].processChart(chart, data);
-    }
-}
 
 module.exports = {
-    getChart,
+    game: gameCharts,
+    player: playerCharts,
+    group: groupCharts,
 }

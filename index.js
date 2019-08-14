@@ -13,9 +13,11 @@ const path = require('path');
 
 // general conf
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 13002;
 const server = http.createServer(app);
 const sessionSecret = process.env.SESSION_SECRET || 's3cr3tS355i0nStr1ng';
+const env = process.env.NODE_ENV || 'development';
+const forceSsl = env === 'production';
 const utils = require('./app/utils');
 
 // handlebars conf
@@ -32,15 +34,38 @@ let handlebars = exphbs.create({
         ifGt: (arg1, arg2, options) => {
             return (arg1 > arg2) ? options.fn(this) : options.inverse(this);
         },
+        ifEmpty: (arg1, options) => {
+            return (arg1.length == 0) ? options.fn(this) : options.inverse(this);
+        },
         json: (ctx, options) => {
             return JSON.stringify(ctx, null, options);
+        },
+        add1: (ctx, options) => {
+            return parseInt(ctx) + 1;
+        },
+        join: (list, str) => {
+            return list.join(str);
+        },
+        joinName: (list, str) => {
+            return list.map(item => item.name).join(str);
         },
     }
 });
 
 // general middlewares
+let appForceSsl = (req, res, next) => {
+    if(forceSsl) {      
+        if(req.headers['x-forwarded-proto'] !== 'https') {
+            return res.redirect(['https://', req.get('Host'), req.url].join(''));
+        }
+    }
+    return next();
+};
 
 app
+.use(appForceSsl)
+
+// express
 .use(express.static(path.join(__dirname,'views/assets')))
 .use(session({
     secret: sessionSecret,
@@ -93,6 +118,7 @@ const Group = require('./app/group');
 const Game = require('./app/game');
 const chart = require('./app/charts');
 const rules = require('./app/rules');
+const hallOfFame = require('./app/charts/halloffame');
 
 /*
 * ROUTES
@@ -100,18 +126,27 @@ const rules = require('./app/rules');
 
 app
 .get('/', isAuth, (req, res) => {
+    processStats(req);
     Group.getGroupWithGames(req.session.currentGroup, result => {
         res.render('group', {
             titleSuffix: ' - '+req.session.currentGroup,
+            description: 'Outil de comptage de point au jeu de Tarot',
             group: result.group,
             games: result.games,
+            overallStats: result.overallStats,
+            additionalJS:[
+                '/js/lib/Chart.min.js',
+                '/js/statsCall.js'
+            ]
         });
     }, req);
 })
 
 .get('/login', (req, res) => {
     res.render('login', {
-        
+        additionalJS: [
+            '/js/loginScripts.js'
+        ]
     });
 })
 
@@ -145,6 +180,13 @@ app
     });
 })
 
+.post('/group/selectplayers', isAuth, (req,res) => {
+    Group.setActivePlayers(req, err => {
+        if(err) console.log(err);
+        res.redirect('/');
+    });
+})
+
 .get('/new/game', isAuth, (req, res) => {
     Group.getGroup(req.session.currentGroup, (group) => {
         Game.getDefaultGameName((name) => {
@@ -163,14 +205,14 @@ app
                 error: err
             });
         } else {
-            res.redirect('/game/'+game.name+'?id='+game._id);
+            res.redirect('/game/'+game._id);
         }
     });
 })
 
-.get('/game/:name', isAuth, (req, res) => {
+.get('/game/:id', isAuth, (req, res) => {
     Game.getGame(
-        req.query.id, 
+        req.params.id, 
         req.session.currentGroup, 
         (err, game) => {
         if(err) {
@@ -180,14 +222,14 @@ app
         } else {
             res.render('game', {
                 game: game,
-                testVar: 'coucou',
                 charts: [
-                    chart.getChart('game','pointsParPersonnes', game.rounds),
-                    chart.getChart('game','prisesParPersonnes', game.rounds),
-                    chart.getChart('game','priseParContrats', game.rounds),
+                    chart.game.pointsParPersonnes(game.rounds),
+                    chart.game.prisesParPersonnes(game.rounds),
+                    chart.game.prisesParContrats(game.rounds),
                 ],
                 additionalJS: [
-                    '/js/Chart.min.js'
+                    '/js/lib/Chart.min.js',
+                    '/js/gameManagerScripts.js',
                 ]
             });
         }
@@ -197,22 +239,102 @@ app
 .post('/round/add', isAuth, (req, res) => {
     Game.addRoundToGame(req, (err, game) => {
         if(err) console.log(err);
-        res.redirect('/game/'+game.name+'?id='+game._id);
+        processStats(req);
+        res.redirect('/game/'+game._id);
     });
+    
 })
 
 .post('/round/edit', isAuth, (req, res) => {
     Game.editRoundFromGame(req, (err, game) => {
         if(err) console.log(err);
-        res.redirect('/game/'+game.name+'?id='+game._id);
+        processStats(req);
+        res.redirect('/game/'+game._id);
     });
 })
 
-.get('/stats/player/:player', isAuth, (req, res) => {
-    res.json({});
-    // TODO
+.post('/game/delete', isAuth, (req, res) => {
+    Game.deleteGame(req, err => {
+        if(err) res.redirect('/?error='+err);
+        else res.redirect('/');
+    });
 })
 
+.post('/game/toggleDisabled', isAuth, (req, res) => {
+    Game.toggleDisabled(req, (err, game) => {
+        if(err) console.log(err);
+        processStats(req);
+        res.redirect('/game/'+game._id);
+    })
+})
+
+.get('/player/:player', isAuth, (req, res) => {
+    Group.getAllGamesForPlayer(req, (err, games, player) => {
+        if(err) {
+            console.log(err)
+        }
+        res.render('player', {
+            player: player,
+            charts: [
+                chart.player.individualPointsEvolutionTarot5(games, player.name),
+            ],
+            heatmaps: [
+                chart.player.gameScoreInYearHeatmapTarot5(games, player.name),
+            ],
+            additionalJS: [
+                '/js/lib/Chart.min.js',
+                '/js/lib/d3.min.js',
+                '/js/lib/d3-tip.js',
+                '/js/heatmap.js',
+            ]
+        });
+    }, 5, false);
+})
+
+/*
+.get('/stats/group', isAuth, (req, res) => {
+    Group.getGroupStats(req.session.currentGroup, (stats) => {
+        res.json(stats); 
+    });
+})*/
+
+.get('/stats/chart/group/:chart', isAuth, (req, res) => {
+    chart.group.getChart(req.session.currentGroup, 
+                         req.params.chart, 
+                         (data) => {
+        res.json(data);
+    });
+})
+
+// default : 5 players
+.get('/api/group/:group/games', (req, res) => {
+    Group.logonToGroup({body:{
+        name:req.params.group,
+        password:req.query.password,
+    }}, (err, group) => {
+        if(err) {
+            res.status(400);
+            res.json({error:err});
+            return err;
+        }
+        Game.getGames({
+            group: group.name,
+            playersNumber: req.query.playersNumber || 5,
+        }, games => {
+            res.json(games);
+        }, req.query.transform || false);
+    })
+})
+
+.get('/ping', (req, res) => {
+    res.json('ok');
+})
+
+.get('/%F0%9F%98%82', (req, res) => {
+    res.render('hbd');
+})
+
+// Replay every rounds of every games with the actual game rules.
 .get('/updateGameRules', isAuth, (req, res) => {
     rules.updateGameRules();
     res.json('command launched');
@@ -230,7 +352,7 @@ app
 
 .get('*', (req, res) => {
     res.status(404);
-    res.json({error:'not found'});
+    res.render('notfound', {layout: false});
 })
 
 // error handler
@@ -251,5 +373,8 @@ server.listen(port, (err) => {
    }
 });
 
-
+function processStats(req) {
+    hallOfFame.processBadges(req.session.currentGroup, result => {
+    });
+}
 

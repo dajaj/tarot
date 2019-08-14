@@ -1,16 +1,8 @@
 
-function processChart(name, data) {
-    if(!data) {
-        return {};
-    }
-    return charts[name](data);
-}
-
-
-const charts = {
-    priseParContrats: prisesParContrats,
-    prisesParPersonnes: prisesParPersonnes,
-    pointsParPersonnes: pointsParPersonnes,
+module.exports = {
+    prisesParContrats,
+    prisesParPersonnes,
+    pointsParPersonnes,
 };
 
 function prisesParContrats(rounds) {
@@ -33,7 +25,11 @@ function prisesParContrats(rounds) {
                 data: stats
             }],
         },
-        options: {},
+        options: {
+            plugins: {
+                drawLabels: false,
+            },
+        },
         label: 'Prises par contrats',
     };
 }
@@ -61,6 +57,9 @@ function prisesParPersonnes(rounds) {
             }],
         },
         options: {
+            plugins: {
+                drawLabels: false,
+            },
             scales: {
                 yAxes: [{
                     ticks: {
@@ -112,13 +111,13 @@ function pointsParPersonnes(rounds) {
             ],*/
             datasets: datasets,
         },
-        options: {},
+        options: {
+            plugins: {
+                drawLabels: false,
+            },
+        },
         label: 'Points',
    };
 }
 
 
-
-module.exports = {
-    processChart
-};

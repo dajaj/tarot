@@ -107,30 +107,9 @@
                         Autres options
                     </div>
                     <div class="collapsible-body">
+                                                
                         <div class="switch">
-                            <p class="caption">Petit au bout</p>
-                            <span>
-                                <label>
-                                    <input type="radio" value="none" name="petit_au_bout"  default />
-                                    <span>Aucun</span>
-                                </label>
-                            </span>
-                            <span>
-                                <label>
-                                    <input type="radio" value="attq" name="petit_au_bout"/>
-                                    <span>Attaque</span>
-                                </label>
-                            </span>
-                            <span>
-                                <label>
-                                    <input type="radio" value="def" name="petit_au_bout"/>
-                                    <span>Défense</span>
-                                </label>
-                            </span>
-                        </div>
-                        
-                        <div class="switch">
-                            <p class="caption">Poignée</p>
+                            <p class="caption">Poignée de l'attaque</p>
                             <span>
                                 <label>
                                     <input type="radio" value="none" name="poignee"  default />
@@ -152,6 +131,34 @@
                             <span>
                                 <label>
                                     <input type="radio" value="triple" name="poignee"/>
+                                    <span>Triple</span>
+                                </label>
+                            </span>
+                        </div>
+                        
+                        <div class="switch">
+                            <p class="caption">Poignée de la défense</p>
+                            <span>
+                                <label>
+                                    <input type="radio" value="none" name="poignee_def"  default />
+                                    <span>Aucune</span>
+                                </label>
+                            </span>
+                            <span>
+                                <label>
+                                    <input type="radio" value="simple" name="poignee_def"/>
+                                    <span>Simple</span>
+                                </label>
+                            </span>
+                            <span>
+                                <label>
+                                    <input type="radio" value="double" name="poignee_def"/>
+                                    <span>Double</span>
+                                </label>
+                            </span>
+                            <span>
+                                <label>
+                                    <input type="radio" value="triple" name="poignee_def"/>
                                     <span>Triple</span>
                                 </label>
                             </span>
@@ -180,27 +187,43 @@
                             </span>    
                             {{/each}}
                         </div>
+
+                        <div class="switch">
+                            <p class="caption">Petit au bout</p>
+                            <span>
+                                <label>
+                                    <input type="radio" value="none" name="petit_au_bout" default />
+                                    <span>Aucun</span>
+                                </label>
+                            </span>
+                            <span>
+                                <label>
+                                    <input type="radio" value="attq" name="petit_au_bout"/>
+                                    <span>Attaque</span>
+                                </label>
+                            </span>
+                            <span>
+                                <label>
+                                    <input type="radio" value="def" name="petit_au_bout"/>
+                                    <span>Défense</span>
+                                </label>
+                            </span>
+                        </div>
                         
                         <div class="switch">
-                            <p class="caption">Chelem</p>
+                            <p class="caption">Autres options</p>
                             <span>
                                 <label>
                                     <input type="checkbox" value="annonce" name="chelem"/>
-                                    <span>Annoncé</span>
-                                </label>
-                            </span>
-                            <!--<span>
-                                <label>
-                                    <input type="checkbox" value="realise" name="chelem"/>
-                                    <span>Réalisé</span>
+                                    <span>Chelem annoncé</span>
                                 </label>
                             </span>
                             <span>
                                 <label>
-                                    <input type="checkbox" value="defense_realise" name="chelem"/>
-                                    <span>Réalisé (défense)</span>
+                                    <input type="checkbox" value="regrette" name="regret"/>
+                                    <span>Avec regret</span>
                                 </label>
-                            </span>-->
+                            </span>
                         </div>
                     </div>
                 </li>

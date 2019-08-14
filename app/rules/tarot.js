@@ -21,8 +21,11 @@ function processParameters(params, game, callback) {
     score : "67"
     petit_au_bout : "none" / "attq" / "def"
     poignee : "none" / "simple" / "double" / "triple"
-    chelem : ["annonce","realise","defense_realise"]
+    poignee_def : "none" / "simple" / "double" / "triple"
     misere : ["HCE", "Joueur 1"]
+    double_misere : ["HCE", "Joueur 1"]
+    chelem : ["annonce","realise","defense_realise"]
+    regret: "regrette"
     */
     let round = {
         params: {
@@ -32,10 +35,12 @@ function processParameters(params, game, callback) {
             bouts : params.bouts,
             score : params.score,
             petit_au_bout :params.petit_au_bout,
-            poignee :params.poignee,
+            poignee: params.poignee,
+            poignee_def: params.poignee_def,
             chelem : params.chelem,
             misere : params.misere,
 			double_misere : params.double_misere,
+            regret: params.regret,
         },
         playersScores: [],
         won: false,
@@ -73,6 +78,8 @@ function processParameters(params, game, callback) {
     if(win) {
         if(params.player == 'HCE') {
             journal.push('Le créateur est victorieux ! Vive le créateur !');
+        } else if(params.player == 'BPR') {
+            journal.push('Attaque victorieuse, quelle chance ce commercial...');
         } else {
             journal.push('Attaque victorieuse');
         }
@@ -125,35 +132,52 @@ function processParameters(params, game, callback) {
     }
     
     // poignées
-    if(params.poignee) {
-        let prime = 0;
-        if(params.poignee == 'simple') {
-            prime = 20;
-        } else if(params.poignee == 'double') {
-            prime = 30;
-        } else if(params.poignee == 'triple') {
-            prime = 40;
+    function getPoigneeScore(poignee) {
+        if(poignee == 'simple') {
+            return 20;
+        } else if(poignee == 'double') {
+            return 30;
+        } else if(poignee == 'triple') {
+            return 40;
         }
+        return 0;
+    }
+    // poignée attaque
+    score.poignee = 0;
+    if(params.poignee) {
+        let prime = getPoigneeScore(params.poignee);
         
         if(win) {
-            score.poignee = prime;
-            journal.push(`Poignée ${params.poignee} de l'attaquant (réalisé): +${score.poignee} pour l'attaquant`);
+            score.poignee += prime;
+            journal.push(`Poignée ${params.poignee} de l'attaquant (réalisé): +${score.poignee} pour l'attaque`);
         } else {
-            score.poignee = -prime;
-            journal.push(`Poignée ${params.poignee} de l'attaquant (non réalisé): ${score.poignee} pour la défense`);
+            score.poignee += -prime;
+            journal.push(`Poignée ${params.poignee} de l'attaquant (non réalisé): ${score.poignee} pour l'attaque`);
+        }
+    }
+    // poignée défense
+    if(params.poignee_def) {
+        let prime = getPoigneeScore(params.poignee_def);
+        
+        if(win) {
+            score.poignee += prime;
+            journal.push(`Poignée ${params.poignee} de la défense (réalisé): +${score.poignee} pour l'attaque`);
+        } else {
+            score.poignee += -prime;
+            journal.push(`Poignée ${params.poignee} de la défense (non réalisé): ${score.poignee} pour l'attaque`);
         }
     }
     
     // petit au bout
     if(params.petit_au_bout) {
-        if(params.petit_au_bout == 'attq') {
+        // old rules
+        if(params.petit_au_bout == 'attq' || params.petit_au_bout == 'petit_au_bout') {
             journal.push(`Petit au bout pour l'attaquant : 10*${multiplicator} = ${multiplicator*10}`);
-            if(win) score.contrat += 10*multiplicator;
-            else score.contrat -= 10*multiplicator;
+            score.contrat += 10*multiplicator;
         } else if(params.petit_au_bout == 'def') {
-            journal.push(`Petit au bout pour la défense : 10*${multiplicator} = ${multiplicator*10}`);
-            if(win) score.contrat -= 10*multiplicator;
-            else score.contrat += 10*multiplicator;
+            
+            journal.push(`Petit au bout pour la défense : 10*${multiplicator} (multiplicateur) = ${multiplicator*10}`);
+            score.contrat -= 10*multiplicator;
         }
     }
     
@@ -164,11 +188,9 @@ function processParameters(params, game, callback) {
     let scoreCalled = 0;
     scoreFinal = score.contrat;
     journal.push(`Score : contrat (${score.contrat})`);
-    if(win) {
-        if(score.poignee) {
-            scoreFinal += score.poignee;
-            journal.push(`Score : + poignee (${score.poignee}) = ${scoreFinal}`);
-        }
+    if(score.poignee && score.poignee != 0) {
+        scoreFinal += score.poignee;
+        journal.push(`Score : + poignee (${score.poignee}) = ${scoreFinal}`);
     }
     
     
@@ -177,12 +199,18 @@ function processParameters(params, game, callback) {
         journal.push(`Bilan prenneur : contrat X 3 = ${scorePrenneur}`);
         
     } else {
-        scorePrenneur = Math.floor(scoreFinal * 3 * (2/3));
-        journal.push(`Bilan prenneur : contrat X 3 X (2/3) = ${scorePrenneur}`);
-        
-        scoreCalled = Math.floor(scoreFinal * 3 * (1/3));
-        journal.push(`Bilan appelé : score prenneur(${scorePrenneur}) * (1/3) = ${scoreCalled}`);
-        
+        if(params.player == params.called) {
+            journal.push(`Le joueur s'est appelé tout seul`);
+            scorePrenneur = scoreFinal * 4;
+            journal.push(`Bilan prenneur : ${scoreFinal} X 4 = ${scorePrenneur}`);
+            scoreCalled = 0;
+        } else {
+            scorePrenneur = Math.floor(scoreFinal * 2);
+            journal.push(`Bilan prenneur : ${scoreFinal} X 2 = ${scorePrenneur}`);
+
+            scoreCalled = Math.floor(scoreFinal * 3 * (1/3));
+            journal.push(`Bilan appelé : ${scoreFinal}`);   
+        }
     }
     
     let scoreDef = -scoreFinal;

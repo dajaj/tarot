@@ -1,0 +1,39 @@
+<h2><a href="/"><i class="edit-btn-collapse material-icons">keyboard_arrow_left</i></a>{{player.name}}</h2>
+
+
+{{#each charts}}
+<h4>{{label}}</h4>
+    <canvas id="chart_{{@index}}" class="chart" 
+            chart-type="{{type}}" 
+            chart-data="{{json data}}" 
+            chart-options="{{json options}}" 
+            width="400" height="300"></canvas>
+{{/each}}
+
+{{#each heatmaps}}
+<h4>{{label}}</h4>
+    <div id="heatmaps_{{@index}}" class="heatmap"
+         heatmap-data="{{json data}}"></div>
+{{/each}}
+
+<h4>Badges</h4>
+<div class="row">
+{{#each player.badges}}
+    <div class="col s12 m4">
+      <div class="card">
+        <div class="card-image">
+          <img src="/images/badges/{{icon}}.jpg">
+          <span class="card-title">{{title}}</span>
+        </div>
+        <div class="card-content">
+          <p>{{description}}</p>
+        </div>
+        {{#if gameId}}
+        <div class="card-action">
+          <a href="/game/{{gameId}}">Partie : {{gameName}}</a>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+{{/each}}
+</div>
